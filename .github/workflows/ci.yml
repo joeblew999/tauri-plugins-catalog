@@ -29,6 +29,13 @@ jobs:
             exit 1
           fi
 
+      # Linux-only: Tauri's host webview deps (apt, can't be in mise)
+      - name: install Tauri Linux host deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev librsvg2-dev pkg-config
+
       # Tauri toolchain: bring in tauri-cli via binstall (prebuilt, fast)
       - name: install tauri-cli via cargo-binstall (fast, prebuilt)
         run: cargo binstall --no-confirm tauri-cli
