@@ -1,0 +1,25 @@
+name: freshness
+on:
+  schedule:
+    - cron: '0 12 * * 1'   # Mondays at 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - name: scan upstream pushed_at and detect drift
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OUTPUT=$(mise run freshness 2>&1)
+          {
+            echo '# Catalog freshness'
+            echo ''
+            echo '```'
+            echo "$OUTPUT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "$OUTPUT"

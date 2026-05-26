@@ -1,5 +1,8 @@
 # tauri-plugins-catalog
 
+[![ci](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/ci.yml/badge.svg)](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/ci.yml)
+[![freshness](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/freshness.yml/badge.svg)](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/freshness.yml)
+
 Structured catalog of Tauri v2 plugins as JSONL.
 
 - [plugins.jsonl](plugins.jsonl) — one plugin per line
