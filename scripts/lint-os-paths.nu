@@ -9,11 +9,10 @@ const PATTERNS = ["/Users/" "/opt/homebrew" "darwin-x86_64" "darwin-aarch64"]
 const ALLOW_LINE_CONTAINS = ["/Library/Developer/CommandLineTools"]
 
 def main [] {
-    let self = "scripts/lint-os-paths.nu"
     let files = (
         (glob "scripts/**/*.nu")
         | append ["plugins.jsonl" "examples.jsonl" "schema.nuon" "example.schema.nuon"]
-        | where { |p| ($p | path exists) and ($p != $self) }
+        | where { |p| ($p | path exists) and (($p | path basename) != "lint-os-paths.nu") }
     )
 
     let hits = ($files | each { |f|
