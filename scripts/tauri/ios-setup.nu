@@ -60,6 +60,9 @@ def main [] {
         print $"✓ CocoaPods: ($v)"
     }
 
+    # Note: xcodegen, libimobiledevice, libusbmuxd — Tauri's `cargo tauri
+    # ios init` auto-installs these via brew on first run. Not our problem.
+
     # Rust iOS targets
     if (which rustup | is-empty) {
         print "⤬ rustup not on PATH — skipping Rust iOS target install."
@@ -68,6 +71,23 @@ def main [] {
     } else {
         print "→ adding Rust iOS targets..."
         ^rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+    }
+
+    # iOS Simulator runtime — separate from the SDK. Tauri's build will fail
+    # with "Xcode Simulator SDK X.Y is not installed, please open Xcode" if
+    # the runtime image (not SDK headers) for the current Xcode's iOS version
+    # isn't downloaded.
+    let sim_r = (^xcrun simctl list runtimes -j | complete)
+    if $sim_r.exit_code == 0 {
+        let runtimes = ($sim_r.stdout | from json | get runtimes | where { |r| ($r.identifier | str contains "iOS") })
+        if ($runtimes | length) == 0 {
+            print "⚠  no iOS simulator runtime installed."
+            print "   Run once (large download, ~6 GB):"
+            print "     xcodebuild -downloadPlatform iOS"
+        } else {
+            let names = ($runtimes | get name | str join ", ")
+            print $"✓ iOS sim runtime: ($names)"
+        }
     }
 
     print ""

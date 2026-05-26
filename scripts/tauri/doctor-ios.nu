@@ -49,6 +49,23 @@ def main [] {
         ok "pod (CocoaPods)" $pod.ver
     }
 
+    # iOS Simulator runtime — separate from the SDK. Tauri's build requires
+    # a matching iOS runtime image, not just the SDK headers. Download via
+    # `xcodebuild -downloadPlatform iOS` (~6 GB, one-time).
+    if not (which xcrun | is-empty) {
+        let sim_r = (^xcrun simctl list runtimes -j | complete)
+        if $sim_r.exit_code == 0 {
+            let runtimes = ($sim_r.stdout | from json | get runtimes | where { |r| ($r.identifier | str contains "iOS") })
+            if ($runtimes | length) == 0 {
+                fail "iOS sim runtime" "xcodebuild -downloadPlatform iOS  (one-time, ~6 GB)"
+                $fails = $fails + 1
+            } else {
+                let names = ($runtimes | get name | str join ", ")
+                ok "iOS sim runtime" $names
+            }
+        }
+    }
+
     let ru = (probe "rustup" ["--version"])
     if not $ru.ok {
         fail "rustup" "needed for Rust iOS targets"

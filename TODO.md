@@ -307,3 +307,54 @@ should leave the system in a state where `doctor.nu` says green.
   `cargo tauri android build` already invokes cargo-ndk internally; if
   not, add `mise use cargo:cargo-ndk` and a thin wrapper task. Defer
   until we have a working Tauri Android build to test against.
+
+### 2026-05-26 (continued — end-to-end APK build on macOS)
+
+- **Full Android toolchain proven end-to-end on this Mac.**
+  - Scaffolded fresh Tauri 2 app: `npx create-tauri-app@latest tauri-android-test --beta --template vanilla --manager npm`
+  - `npm run tauri android init` — Tauri detected our installed NDK
+    automatically: *"Info Using installed NDK: /.../ndk/27.0.12077973"*
+    No `.cargo/config.toml` adjustments needed — Tauri's own scaffolder
+    handles linker stanzas via cargo-ndk internally.
+  - `npm run tauri android build -- --apk --debug` produced a 422 MB
+    universal debug APK at `src-tauri/gen/android/app/build/outputs/apk/universal/debug/app-universal-debug.apk`
+    containing native libs for arm64-v8a, armeabi-v7a, x86, x86_64.
+  - Total elapsed: ~3 minutes (most was Rust crate compile; Gradle was
+    fast).
+- **Implication for `cargo-ndk` follow-up:** Tauri appears to invoke
+  cargo-ndk transparently (no manual config required). So we don't
+  need to install or wrap cargo-ndk separately — it's already handled
+  by tauri-cli. Closing that TODO item.
+- **Implication for `init-project.nu` follow-up:** Tauri's own init
+  generates everything needed. No need for our custom init-project
+  wrapper. Closing that TODO item.
+- **NDK_HOME must be exported.** `cargo tauri android init` / `build`
+  reads `NDK_HOME` env var. mise's [env] block in mise.toml (project
+  or global) would make this automatic. Documenting as a setup step.
+- **Test project location:** `/Users/apple/workspace/tauri-android-test/`
+  (outside this repo). Throwaway smoke-test; not committed anywhere.
+
+- **iOS build: hit a wall on simulator runtime.** Tried `tauri ios build
+  --target aarch64-sim --debug` against same scaffold. Errors:
+  - `Xcode Simulator SDK 26.5 is not installed, please open Xcode` — but
+    `xcodebuild -showsdks` shows the SDK IS installed. The actual gap is
+    the simulator *runtime* image (iOS 26 OS for the simulator) — different
+    from the SDK headers. Only iOS 18.3 runtime was present on this Mac.
+  - Fix: `xcodebuild -downloadPlatform iOS` — Apple-managed ~6 GB download.
+    Unattended per Apple docs, but didn't want to spend 6 GB of context.
+  - Encoded the gap in `doctor:ios`: now checks `xcrun simctl list runtimes`
+    and fails with the exact remediation command if no iOS runtime present.
+  - `ios-setup.nu` warns about it if missing (doesn't auto-download — too
+    large to do silently).
+- **Device builds need signing.** "No code signing certificates found.
+  Set `bundle > iOS > developmentTeam` config or `APPLE_DEVELOPMENT_TEAM`
+  env var." Future work: figure out how to inject team ID idempotently
+  (probably fnox-stored secret per user's standard pattern).
+- **Bundle ID warning observed.** `com.tauricatalogtest.app` ends with
+  `.app` which conflicts with macOS bundle extension. Avoided in future
+  scaffolds with `--identifier com.<something-without-app-suffix>.<name>`.
+- **Tauri ios init auto-installs Mac helpers** via brew: `xcodegen`,
+  `libimobiledevice`, `libusbmuxd`, and `cocoapods` (if not present).
+  So our `tauri:ios:setup` only really needs to: verify Xcode, pre-install
+  cocoapods for faster first init, ensure Rust iOS targets. Simplified
+  the script: dropped the brief mise-xcodegen pin (Tauri does it anyway).
