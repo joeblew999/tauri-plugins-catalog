@@ -308,6 +308,27 @@ should leave the system in a state where `doctor.nu` says green.
   not, add `mise use cargo:cargo-ndk` and a thin wrapper task. Defer
   until we have a working Tauri Android build to test against.
 
+### 2026-05-26 (continued — cross-OS CI proven, upstream bug filed)
+
+- **CI matrix on all 3 desktops works.** ci.yml runs lightweight validation
+  on every push/PR; ci-full.yml runs the full Android toolchain install +
+  real APK build on push to main + workflow_dispatch.
+- **ci-full result (run 26438010822):**
+  - ✓ ubuntu-latest — real APK built
+  - ✓ macos-latest — real APK built
+  - ✗ windows-latest — upstream bug in vfox-android-sdk plugin
+- **Upstream bug filed:** [mise-plugins/vfox-android-sdk#8](https://github.com/mise-plugins/vfox-android-sdk/issues/8).
+  `post_install.lua:44` looks for `sdkmanager` (no extension) but Windows
+  ships `sdkmanager.bat`. Trivial fix in the plugin's Lua hook.
+- **Windows-Android workaround until plugin fix:**
+  - Option A: download cmdline-tools zip directly, set ANDROID_HOME manually
+  - Option B: use WSL2 (Linux subsystem; our Linux path works there)
+  - Option C: wait for upstream fix (just filed)
+- **examples.jsonl ↔ plugins.jsonl link via `plugins[]` field.**
+  Validator enforces each entry exists in plugins.jsonl. `examples:coverage`
+  task surfaces gaps: 1/36 today (just `opener`). Filling these is the
+  next data-curation work.
+
 ### 2026-05-26 (continued — monorepo restructure + catalog-driven build)
 
 - **examples.jsonl is now an executable spec**, not just docs.

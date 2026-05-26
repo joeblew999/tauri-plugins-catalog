@@ -25,7 +25,13 @@ cargo binstall --no-confirm tauri-cli
 mise run tauri:doctor:base
 ```
 
-For **Android** development (any OS):
+For **Android** development:
+
+> ⚠️ **Windows is currently blocked** by an upstream bug in
+> `mise-plugins/vfox-android-sdk` ([issue #8](https://github.com/mise-plugins/vfox-android-sdk/issues/8)
+> — the plugin's post-install verifies `sdkmanager` without the `.bat`
+> extension Windows ships). Use WSL2 or wait for the fix.
+> macOS + Linux work end-to-end (ci-full verifies real APK build on both).
 
 ```sh
 # Linux only: webview deps
