@@ -3,11 +3,27 @@
 # every declared target the host can handle, report artifacts.
 #
 # Source: `local` (in-tree) preferred when set; else clone `repo` into work/.
-# NDK_HOME: set from entry's android.ndk when specified, else default mise path.
+# NDK_HOME: derived OS-neutrally from $env.ANDROID_HOME/ndk/<version>.
+#   - if entry.android.ndk is set, use that version
+#   - else pick the highest version installed
 #
 # Usage: mise run examples:build <name>
 
-const NDK_DEFAULT_PATH = "/Users/apple/.local/share/mise/installs/vfox-mise-plugins-vfox-android-sdk/20.0/ndk/27.0.12077973"
+# Derive NDK_HOME from ANDROID_HOME (OS-neutral). Returns null if no NDK found.
+def resolve-ndk [pinned: any] {
+    let ah = ($env.ANDROID_HOME? | default "")
+    if $ah == "" { return null }
+    let ndk_root = $"($ah)/ndk"
+    if not ($ndk_root | path exists) { return null }
+    let versions = (ls $ndk_root | get name | each { |p| $p | path basename } | sort)
+    if ($versions | length) == 0 { return null }
+    let chosen = if $pinned != null and ($pinned in $versions) {
+        $pinned
+    } else {
+        $versions | last
+    }
+    $"($ndk_root)/($chosen)"
+}
 
 def main [name: string] {
     let entries = (open examples.jsonl --raw | lines | each { from json })
@@ -68,14 +84,10 @@ def main [name: string] {
 
     # Android build
     if ("android" in $entry.targets) {
-        let ndk_home = if $entry.android.ndk != null {
-            let candidate = $"($NDK_DEFAULT_PATH | path dirname)/($entry.android.ndk)"
-            if ($candidate | path exists) { $candidate } else { $NDK_DEFAULT_PATH }
-        } else {
-            $NDK_DEFAULT_PATH
-        }
-        if not ($ndk_home | path exists) {
-            print --stderr $"  ✗ NDK not found at ($ndk_home). Run: mise run tauri:android:setup"
+        let pinned = ($entry.android.ndk? | default null)
+        let ndk_home = (resolve-ndk $pinned)
+        if $ndk_home == null {
+            print --stderr "  ✗ No NDK found via $ANDROID_HOME/ndk/. Run: mise run tauri:android:setup"
         } else {
             $env.NDK_HOME = $ndk_home
             print ""
