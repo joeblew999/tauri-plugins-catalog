@@ -30,8 +30,20 @@ description = "Check upstream pushed_at and detect catalog drift (requires gh)"
 run = "nu scripts/plugins/freshness.nu"
 
 [tasks."tauri:doctor"]
-description = "Verify Tauri toolchain prerequisites (--android to force Android checks)"
+description = "Verify Tauri toolchain — runs base + android + ios sub-doctors"
 run = "nu scripts/tauri/doctor.nu"
+
+[tasks."tauri:doctor:base"]
+description = "Verify base prereqs only (no platform layers)"
+run = "nu scripts/tauri/doctor-base.nu"
+
+[tasks."tauri:doctor:android"]
+description = "Verify Android prereqs only (Java 17, ANDROID_HOME, NDK, Rust targets)"
+run = "nu scripts/tauri/doctor-android.nu"
+
+[tasks."tauri:doctor:ios"]
+description = "Verify iOS prereqs only (Xcode, CocoaPods, Rust iOS targets; macOS only)"
+run = "nu scripts/tauri/doctor-ios.nu"
 
 # ── Android — install + verify, then per-project lifecycle ───────────────
 # Copied from joeblew999/.github mise-tasks/mobile/ (CC0 self-fork).
@@ -59,8 +71,7 @@ run = "nu scripts/tauri/android-uninstall.nu"
 
 # ── iOS — macOS host only ───────────────────────────────────────────────
 [tasks."tauri:ios:setup"]
-description = "Install + verify iOS toolchain: Xcode CLI + CocoaPods + Rust targets (macOS only)"
-tools = { ruby = "latest" }
+description = "Install + verify iOS toolchain: Xcode CLI + CocoaPods (via mise) + Rust targets (macOS only)"
 run = "nu scripts/tauri/ios-setup.nu"
 
 [tasks."tauri:ios:init"]

@@ -1,9 +1,25 @@
 #!/usr/bin/env nu
-#MISE description="Assert Android toolchain: Java 17+, ANDROID_HOME, NDK. Run once per machine."
+# tauri:android:setup — install + verify Android tooling for Tauri development.
+#
+# **No Android Studio required.** Installs cmdline-tools via mise (or the user
+# does), then drives `sdkmanager` to install NDK + platforms + build-tools.
+#
+# Prerequisites (do these first; we fail with a hint if missing):
+#   1. Java 17+: handled by this task's mise `tools = { java = "..." }` pin
+#   2. sdkmanager on PATH: `mise use -g android-sdk@latest`
+#      (uses the vfox:mise-plugins/vfox-android-sdk plugin — cmdline-tools only,
+#       no GUI / no Android Studio)
+#
+# Installs into ANDROID_HOME (default: $HOME/.android-sdk):
+#   - NDK 27.0.12077973
+#   - platforms;android-34
+#   - build-tools;34.0.0
+# Plus the 4 Rust Android target triples via rustup.
 
 def main [] {
+  # 1. java 17+
   if (which java | is-empty) {
-    print --stderr "✗ java not found — run: mise use java@temurin-17"
+    print --stderr "✗ java not found — this task should pin it via mise. Re-run via `mise run tauri:android:setup`."
     exit 1
   }
   let ver_raw = (^java -version | complete | get stderr | lines | first)
@@ -14,50 +30,57 @@ def main [] {
   }
   print $"✓ Java ($java_ver)"
 
+  # 2. sdkmanager (cmdline-tools)
+  if (which sdkmanager | is-empty) {
+    print --stderr "✗ sdkmanager not on PATH."
+    print --stderr "  Install Android cmdline-tools via mise (no Android Studio needed):"
+    print --stderr "    mise use -g android-sdk@latest"
+    exit 1
+  }
+  print $"✓ sdkmanager: ((which sdkmanager | get path.0))"
+
+  # 3. ANDROID_HOME — where SDK components (NDK, platforms, build-tools) live
   mut android_home = ($env.ANDROID_HOME? | default "")
   if ($android_home | is-empty) {
-    let mac_default = $"($env.HOME)/Library/Android/sdk"
-    let linux_default = $"($env.HOME)/Android/Sdk"
-    if ($mac_default | path exists) {
-      $android_home = $mac_default
-      print $"→ auto-detected ANDROID_HOME=($android_home) \(Android Studio default\)"
-      print $"  Add to .mise.toml [env]: ANDROID_HOME = \"($android_home)\""
-    } else if ($linux_default | path exists) {
-      $android_home = $linux_default
-      print $"→ auto-detected ANDROID_HOME=($android_home)"
-    } else {
-      print --stderr "✗ ANDROID_HOME not set and no SDK found at default paths."
-      print --stderr "  Install Android Studio, or set ANDROID_HOME in .mise.toml [env]."
-      exit 1
-    }
-    $env.ANDROID_HOME = $android_home
+    $android_home = $"($env.HOME)/.android-sdk"
+    print $"→ ANDROID_HOME not set; defaulting to ($android_home)"
+    print $"  To persist, add to your mise.toml [env]: ANDROID_HOME = \"($android_home)\""
+    mkdir $android_home
+  } else if not ($android_home | path exists) {
+    print $"→ ANDROID_HOME set to ($android_home) but does not exist; creating"
+    mkdir $android_home
   }
   print $"✓ ANDROID_HOME=($android_home)"
 
-  let ndk_base = $"($android_home)/ndk"
-  if ($ndk_base | path exists) and (ls $ndk_base | length) > 0 {
-    let ndk_ver = (ls $ndk_base | get name | each { |p| $p | path basename } | sort | last)
-    let ndk_dir = $"($ndk_base)/($ndk_ver)"
-    print $"✓ NDK ($ndk_ver) \(($ndk_dir)\)"
-    $env.ANDROID_NDK_HOME = $ndk_dir
+  # 4. accept licenses (sdkmanager prompts; `yes` keeps feeding y until it exits)
+  print "→ accepting Android SDK licenses (auto y)..."
+  ^yes | ^sdkmanager $"--sdk_root=($android_home)" --licenses out+err> /dev/null
+
+  # 5. install NDK + platform + build-tools (idempotent: sdkmanager skips if present)
+  print "→ installing NDK 27.0.12077973 + platform-34 + build-tools 34.0.0..."
+  ^sdkmanager $"--sdk_root=($android_home)" --install "ndk;27.0.12077973" "platforms;android-34" "build-tools;34.0.0"
+
+  let ndk_dir = $"($android_home)/ndk/27.0.12077973"
+  if not ($ndk_dir | path exists) {
+    print --stderr $"✗ expected NDK at ($ndk_dir) but it's not there"
+    exit 1
+  }
+  print $"✓ NDK at ($ndk_dir)"
+  print $"  To persist NDK_HOME, add to your mise.toml [env]: NDK_HOME = \"($ndk_dir)\""
+
+  # 6. Rust Android targets
+  if (which rustup | is-empty) {
+    print "⤬ rustup not on PATH — skipping Rust Android target install."
+    print "  Ensure `rust = \"stable\"` is pinned in your repo's mise.toml, then:"
+    print "    rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android"
   } else {
-    let sdkmgr = $"($android_home)/cmdline-tools/latest/bin/sdkmanager"
-    if not ($sdkmgr | path exists) {
-      print --stderr $"✗ sdkmanager not found at ($sdkmgr)"
-      print --stderr "  Install 'Command-line tools' from Android Studio → SDK Manager → SDK Tools."
-      exit 1
-    }
-    print "→ installing NDK 27 + platform 34 via sdkmanager..."
-    ^$sdkmgr --install "ndk;27.0.12077973" "platforms;android-34" "build-tools;34.0.0"
-    $env.ANDROID_NDK_HOME = $"($ndk_base)/27.0.12077973"
-    print $"✓ NDK installed: ($env.ANDROID_NDK_HOME)"
+    print "→ adding Rust Android targets..."
+    ^rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
   }
 
-  print "→ adding Rust Android targets..."
-  ^rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-
   print ""
-  print "✓ Android toolchain ready."
-  print "  Next: mise run init:android   (first time only)"
-  print "        mise run dev:android    (requires device or emulator)"
+  print "✓ Android toolchain ready (no Android Studio used)."
+  print "  Next:"
+  print "    mise run tauri:android:init   (first time per project)"
+  print "    mise run tauri:android:dev    (with device or — later — emulator)"
 }

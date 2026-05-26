@@ -46,9 +46,11 @@ mise run examples:validate         # verify examples.jsonl against example.schem
 Tauri toolchain scripts (`scripts/tauri/`):
 
 ```sh
-# Base layer
-mise run tauri:doctor              # verify Tauri prerequisites (read-only)
-mise run tauri:doctor -- --android # also check Android layer
+# Doctor — composable: orchestrator + per-platform sub-doctors
+mise run tauri:doctor              # runs base + android + ios sub-doctors
+mise run tauri:doctor:base         # base only (rust, node, tauri-cli, webview deps)
+mise run tauri:doctor:android      # Android only (Java, ANDROID_HOME, NDK, Rust targets)
+mise run tauri:doctor:ios          # iOS only (Xcode, CocoaPods, Rust iOS targets; macOS-gated)
 
 # Android — install + verify, then per-project lifecycle
 mise run tauri:android:setup       # install NDK 27, add Rust Android targets

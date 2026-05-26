@@ -233,3 +233,77 @@ should leave the system in a state where `doctor.nu` says green.
   include: `includes = ["git::https://github.com/joeblew999/.github.git//tasks/mobile.toml?ref=<tag>"]`.
   Trade-off: single source of truth + auto-updates vs. self-contained repo.
   Sticking with copy for now per user direction.
+- **Pivot:** user explicitly wants NO Android Studio — cmdline-tools only.
+  Rewrote `android-setup.nu` to require `mise use -g vfox:mise-plugins/vfox-android-sdk@20.0`
+  (the registry alias `android-sdk` points here) which installs cmdline-tools
+  to `~/.local/share/mise/installs/vfox-mise-plugins-vfox-android-sdk/<ver>/`.
+  The plugin also auto-sets `ANDROID_HOME` to that dir, so SDK components
+  (NDK, platforms, build-tools) install alongside cmdline-tools — `mise
+  uninstall <plugin>` would clean everything in one shot.
+- **Verified end-to-end on macOS 2026-05-26:** setup → doctor (5/6 Android
+  ok, NDK_HOME unset is the only fail) → uninstall → doctor (back to
+  pre-setup state). Round-trip works.
+- **Gotcha:** in nushell `$"..."` interpolated strings, `\[` and `\]` are
+  invalid escapes. Brackets aren't special inside interpolation; write them
+  literal: `[env]` not `\[env\]`. Fixed in android-setup.nu.
+- **Found two `android-sdk` plugins for mise:**
+  1. asdf-style: `https://github.com/mise-plugins/mise-android-sdk` —
+     requires `yq` as an external dep, more configurable
+  2. vfox: `mise-plugins/vfox-android-sdk` — registry default for
+     `android-sdk`, self-contained, simpler
+  Going with vfox via explicit qualified name to avoid resolution ambiguity
+  when both are present on a machine.
+- **NDK_HOME persistence is manual.** Setup prints the path; user must add
+  to their mise.toml `[env]`. Could automate via `mise set --global` but that's
+  destructive to user config — leaving manual for now. Doctor now detects an
+  existing NDK under ANDROID_HOME/ndk/ and gives the exact export command.
+
+### 2026-05-26 (continued — doctor refactor + iOS round-trip)
+
+- **doctor → composable sub-doctors.** Split into:
+  - `scripts/tauri/doctor-base.nu` (rust, node, tauri-cli, cargo-binstall, OS webview deps)
+  - `scripts/tauri/doctor-android.nu` (Java, ANDROID_HOME, sdkmanager, NDK, rust targets)
+  - `scripts/tauri/doctor-ios.nu` (Xcode, CocoaPods, rust ios targets; macOS-gated)
+  - `scripts/tauri/doctor.nu` (orchestrator — runs all 3 via subprocess, aggregates exit codes via `| complete`)
+  - 4 mise tasks: `tauri:doctor` + `tauri:doctor:{base,android,ios}`
+- **iOS round-trip verified on macOS:** setup → doctor:ios (4/4 green) →
+  uninstall → doctor:ios (back to failing on cocoapods + rust ios targets).
+- **CocoaPods install: surprisingly hard via mise on macOS.** Tried:
+  1. mise registry alias `cocoapods` → `gem:cocoapods` backend — `gem`
+     resolved to system Ruby 2.6 (`/usr/bin/gem`), perm-denied on
+     `/Library/Ruby/Gems/2.6.0`. Even with mise-pinned ruby@3.3.11,
+     `which gem` still returned the system one inside the install context.
+  2. `ronnnnn/asdf-cocoapods` plugin (per research) — installed gems but
+     the resulting `pod` binary's shebang `#!/usr/bin/env ruby` still hit
+     system Ruby 2.6, crashing on `require 'cocoapods'`. mise's Ruby
+     activation didn't reach the pod subprocess.
+  - **Resolution:** switched ios-setup to `brew install cocoapods` /
+    `brew uninstall cocoapods`. Homebrew ships its own Ruby, sidesteps
+    the entire mess. Documented this trade-off (Homebrew isn't
+    mise-managed) in the script header.
+- **nushell pitfalls discovered:**
+  - `try { ^cmd } catch { $mut = ... }` — catch is a closure, can't
+    mutate vars. Use `let r = (^cmd | complete); if $r.exit_code != 0 { $mut = ... }` instead.
+  - `^cmd | complete` requires `cmd` to actually exist on PATH; if the
+    binary is truly missing (not just a broken shim), nu errors at parse
+    time. Guard with `which $cmd | is-empty` first.
+  - `source path/to/file.nu` resolution is brittle across cwd/script
+    location. Inlining helpers in each script (~17 lines duplication)
+    was the simplest fix.
+- **`mise unuse -g <tool>` is critical for full uninstall.** Just
+  `mise uninstall <tool>` removes the installed binaries but leaves the
+  pin in `~/.config/mise/config.toml`, causing every subsequent
+  `mise run` to re-trigger install. Caught us mid-iteration on cocoapods.
+- **Research finding (pending consideration):** `arcticShadow/asdf-android`
+  could replace `vfox:mise-plugins/vfox-android-sdk@20.0` + our manual
+  `sdkmanager` invocations with a single declarative `[tools.android]`
+  with `ndk = "27.0.12077973"`, `platforms = "android-34"` etc. Single
+  plugin, no yq dep, would make `tauri:android:setup` redundant. Not
+  switching yet — current flow works and is proven. Defer.
+- **`bbqsrc/cargo-ndk` — evaluate after first APK build.** Wraps cargo
+  build for Android targets without manual `.cargo/config.toml` linker
+  stanzas. Does NOT replace the NDK (despite some descriptions
+  suggesting otherwise) — still needs NDK_HOME. Action: check whether
+  `cargo tauri android build` already invokes cargo-ndk internally; if
+  not, add `mise use cargo:cargo-ndk` and a thin wrapper task. Defer
+  until we have a working Tauri Android build to test against.
