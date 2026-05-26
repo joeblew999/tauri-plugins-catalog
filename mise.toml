@@ -1,5 +1,10 @@
 [tools]
-"aqua:nushell/nushell" = "latest"
+# Base layer: runs everywhere, OS-neutral via aqua/mise registry.
+"aqua:nushell/nushell" = "latest"   # the language we author scripts in
+rust              = "stable"        # >= 1.77.2 for Tauri 2
+node              = "lts"           # JS frontends
+java              = "17"            # Android (gradle), inert elsewhere
+"cargo-binstall"  = "latest"        # prebuilt-binary accelerator for cargo
 
 [tasks."plugins:validate"]
 description = "Verify plugins.jsonl matches schema.nuon"

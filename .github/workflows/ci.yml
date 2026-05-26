@@ -14,6 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
+
+      # Catalog tasks (cheap, must pass on every OS)
       - run: mise run lint:os-paths
       - run: mise run plugins:validate
       - run: mise run plugins:sort
@@ -26,3 +28,10 @@ jobs:
             echo "::error::JSONL or README is out of sync. Run 'mise run plugins:sort && mise run plugins:render' locally and commit."
             exit 1
           fi
+
+      # Tauri toolchain: bring in tauri-cli via binstall (prebuilt, fast)
+      - name: install tauri-cli via cargo-binstall (fast, prebuilt)
+        run: cargo binstall --no-confirm tauri-cli
+
+      # Now doctor:base should report all checks green on every OS
+      - run: mise run tauri:doctor:base
