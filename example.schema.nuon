@@ -8,9 +8,14 @@
 #
 # Conventions:
 #   - Tauri-only. Entries must depend on tauri 2.x.
-#   - `targets` lists what the app actually builds for (desktop, mobile, both).
-#     If mobile, our tauri:android:setup / tauri:ios:setup scripts must apply.
-#   - `description` is the project's own one-line tagline, normalised.
+#   - `targets` lists what the app actually builds for. If "android" is listed,
+#     the `android` block should be populated (else null).
+#   - Tauri itself does NOT pin the NDK version anywhere top-level (not in
+#     tauri.conf.json, not in generated build.gradle.kts). Apps use whatever
+#     NDK is in NDK_HOME at build time. We track `ndk` here for reproducibility:
+#     if known, populate; otherwise null (meaning "any reasonable NDK works").
+#   - Android API levels (min/target) ARE pinned by Tauri's generated gradle
+#     (compileSdk/minSdk/targetSdk). Defaults: minSdk=24, targetSdk=36.
 
 {
     name: "example",                                # short unique slug, e.g. "spacedrive"
@@ -19,7 +24,17 @@
     tauri_version: "2",                             # "2" | "1" — must be "2" for new entries
     frontend: "react",                              # "vanilla" | "react" | "vue" | "svelte" | "solid" | "leptos" | "yew" | "dioxus" | "other"
     targets: ["desktop"],                           # subset of: "windows" "macos" "linux" "ios" "android"
+    android: null,                                  # null if not targeting android; else { min_api, target_api, ndk }
+    ios: null,                                      # null if not targeting ios; else { deployment_target, xcode_min }
     tags: ["example", "demo"],                      # short lowercase kebab-case tags
     stars_at_verify: 0,                             # github stars at last_verified; for context
     last_verified: "2026-05-26",                    # YYYY-MM-DD; date last checked against upstream
 }
+
+# Example values for the android block (when targets includes "android"):
+#   android: { min_api: 24, target_api: 36, ndk: "27.0.12077973" }
+#   android: { min_api: 24, target_api: 36, ndk: null }   # uses whatever NDK is in NDK_HOME
+#
+# Example values for the ios block (when targets includes "ios"):
+#   ios: { deployment_target: "13.0", xcode_min: "15.0" }
+#   ios: { deployment_target: "13.0", xcode_min: null }

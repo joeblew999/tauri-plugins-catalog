@@ -25,6 +25,10 @@ let errors = ($raw | lines | enumerate | each { |row|
             let bad_t = ($entry.targets | where { |t| not ($t in $valid_targets) })
             if ($bad_t | length) > 0 {
                 $"line ($n): bad target(s): ($bad_t | str join ', '). valid: ($valid_targets | str join ', ')"
+            } else if ("android" in $entry.targets) and ($entry.android == null) {
+                $"line ($n): targets includes 'android' but android field is null. Populate with { min_api, target_api, ndk }"
+            } else if ("ios" in $entry.targets) and ($entry.ios == null) {
+                $"line ($n): targets includes 'ios' but ios field is null. Populate with { deployment_target, xcode_min }"
             } else {
                 null
             }

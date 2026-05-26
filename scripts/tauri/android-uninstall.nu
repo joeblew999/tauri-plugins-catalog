@@ -22,8 +22,8 @@ def main [--dry-run, --yes, --purge] {
 
   mut actions = [
     $"sdkmanager --sdk_root=($ah) --uninstall 'ndk;27.0.12077973'",
-    $"sdkmanager --sdk_root=($ah) --uninstall 'platforms;android-34'",
-    $"sdkmanager --sdk_root=($ah) --uninstall 'build-tools;34.0.0'",
+    $"sdkmanager --sdk_root=($ah) --uninstall 'platforms;android-36'",
+    $"sdkmanager --sdk_root=($ah) --uninstall 'build-tools;36.0.0'",
     "rustup target remove aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android",
   ]
   if $purge {
@@ -49,8 +49,8 @@ def main [--dry-run, --yes, --purge] {
 
   if not (which sdkmanager | is-empty) {
     ^sdkmanager $"--sdk_root=($ah)" --uninstall "ndk;27.0.12077973"
-    ^sdkmanager $"--sdk_root=($ah)" --uninstall "platforms;android-34"
-    ^sdkmanager $"--sdk_root=($ah)" --uninstall "build-tools;34.0.0"
+    ^sdkmanager $"--sdk_root=($ah)" --uninstall "platforms;android-36"
+    ^sdkmanager $"--sdk_root=($ah)" --uninstall "build-tools;36.0.0"
   }
   if not (which rustup | is-empty) {
     ^rustup target remove aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android

@@ -358,3 +358,20 @@ should leave the system in a state where `doctor.nu` says green.
   So our `tauri:ios:setup` only really needs to: verify Xcode, pre-install
   cocoapods for faster first init, ensure Rust iOS targets. Simplified
   the script: dropped the brief mise-xcodegen pin (Tauri does it anyway).
+
+- **Tauri doesn't pin NDK version anywhere top-level.** Confirmed by
+  inspecting `tauri.conf.json` (no ndk/android mention) and the
+  generated `src-tauri/gen/android/app/build.gradle.kts` (no `ndkVersion`).
+  Tauri uses whatever's in `NDK_HOME` at build time. **What gradle DOES
+  pin** per app: `compileSdk` (36 in current default), `minSdk` (24),
+  `targetSdk` (36). Implication: NDK is host-level concern; Android API
+  level is app-level concern.
+- **Bumped our setup from API 34 → 36** to match current Tauri default.
+  Updated android-setup, android-uninstall, doctor-android. The earlier
+  successful build was because gradle silently auto-fetched what it
+  needed; explicit installs are now correct.
+- **Schema update for examples.jsonl:** added `android: { min_api,
+  target_api, ndk }` and `ios: { deployment_target, xcode_min }` fields,
+  nullable when the app doesn't target that platform. Validator now also
+  enforces: if `targets` includes "android", `android` block must be
+  populated. Same for ios.

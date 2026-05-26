@@ -12,8 +12,8 @@
 #
 # Installs into ANDROID_HOME (default: $HOME/.android-sdk):
 #   - NDK 27.0.12077973
-#   - platforms;android-34
-#   - build-tools;34.0.0
+#   - platforms;android-36
+#   - build-tools;36.0.0
 # Plus the 4 Rust Android target triples via rustup.
 
 def main [] {
@@ -58,7 +58,7 @@ def main [] {
 
   # 5. install NDK + platform + build-tools (idempotent: sdkmanager skips if present)
   print "→ installing NDK 27.0.12077973 + platform-34 + build-tools 34.0.0..."
-  ^sdkmanager $"--sdk_root=($android_home)" --install "ndk;27.0.12077973" "platforms;android-34" "build-tools;34.0.0"
+  ^sdkmanager $"--sdk_root=($android_home)" --install "ndk;27.0.12077973" "platforms;android-36" "build-tools;36.0.0"
 
   let ndk_dir = $"($android_home)/ndk/27.0.12077973"
   if not ($ndk_dir | path exists) {
