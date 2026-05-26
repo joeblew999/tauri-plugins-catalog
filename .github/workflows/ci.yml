@@ -1,0 +1,21 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: mise run validate
+      - run: mise run sort
+      - run: mise run render
+      - name: catalog and README must be sorted and regenerated
+        run: |
+          if ! git diff --exit-code -- plugins.jsonl README.md; then
+            echo "::error::JSONL or README is out of sync. Run 'mise run sort && mise run render' locally and commit."
+            exit 1
+          fi
