@@ -1,0 +1,39 @@
+[tools]
+jq = "latest"
+
+[tasks.validate]
+description = "Verify plugins.jsonl: every line parses, required fields present"
+run = """
+set -e
+missing=0
+while IFS= read -r line; do
+  echo "$line" | jq -e '
+    .name and .official != null and .description and .repo and .platforms
+    and (.platforms | .windows and .macos and .linux and .ios and .android)
+    and .last_verified
+  ' > /dev/null || { echo "BAD: $line"; missing=$((missing+1)); }
+done < plugins.jsonl
+if [ "$missing" -gt 0 ]; then
+  echo "$missing invalid line(s)" >&2
+  exit 1
+fi
+echo "ok: $(wc -l < plugins.jsonl) entries"
+"""
+
+[tasks.count]
+description = "Entry count + official/third-party split"
+run = """
+total=$(wc -l < plugins.jsonl | tr -d ' ')
+official=$(jq -s '[.[] | select(.official)] | length' plugins.jsonl)
+third=$(jq -s '[.[] | select(.official | not)] | length' plugins.jsonl)
+echo "total:       $total"
+echo "official:    $official"
+echo "third-party: $third"
+"""
+
+[tasks.sort]
+description = "Sort plugins.jsonl by name, in place"
+run = """
+jq -c -s 'sort_by(.name) | .[]' plugins.jsonl > plugins.jsonl.tmp
+mv plugins.jsonl.tmp plugins.jsonl
+"""
