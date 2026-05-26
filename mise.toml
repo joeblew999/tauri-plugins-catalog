@@ -95,3 +95,7 @@ run = "nu scripts/tauri/ios-uninstall.nu"
 [tasks."examples:validate"]
 description = "Verify examples.jsonl matches example.schema.nuon"
 run = "nu scripts/examples/validate.nu"
+
+[tasks."examples:build"]
+description = "Clone an examples.jsonl entry and build it for every target the entry declares (usage: mise run examples:build <name>)"
+run = "nu scripts/examples/build.nu"
