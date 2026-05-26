@@ -5,41 +5,22 @@ on:
   pull_request:
 
 jobs:
-  # OS-neutrality lint: no hardcoded /Users/, /home/joeblew999/, /opt/homebrew, etc.
-  # in our scripts. The grep allow-lists /Library/Developer/CommandLineTools
-  # because that's Apple's fixed path inside macOS-gated ios scripts.
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: no hardcoded OS-specific paths
-        run: |
-          BAD=$(grep -rnE '/Users/|/opt/homebrew|darwin-x86_64|darwin-aarch64' \
-                  scripts/ examples.jsonl plugins.jsonl schema.nuon example.schema.nuon \
-                  2>/dev/null \
-                | grep -v 'CommandLineTools' || true)
-          if [ -n "$BAD" ]; then
-            echo "::error::Hardcoded OS-specific paths detected:"
-            echo "$BAD"
-            exit 1
-          fi
-          echo "ok: no hardcoded host paths"
-
-  # Verify the catalog tasks work identically on both Linux and macOS.
   check:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
+      - run: mise run lint:os-paths
       - run: mise run plugins:validate
       - run: mise run plugins:sort
       - run: mise run plugins:render
       - run: mise run examples:validate
       - name: plugins.jsonl and README must be sorted and regenerated
+        shell: bash
         run: |
           if ! git diff --exit-code -- plugins.jsonl README.md; then
             echo "::error::JSONL or README is out of sync. Run 'mise run plugins:sort && mise run plugins:render' locally and commit."

@@ -96,6 +96,10 @@ run = "nu scripts/tauri/ios-uninstall.nu"
 description = "Verify examples.jsonl matches example.schema.nuon"
 run = "nu scripts/examples/validate.nu"
 
+[tasks."lint:os-paths"]
+description = "Fail if any source file contains hardcoded OS-specific absolute paths"
+run = "nu scripts/lint-os-paths.nu"
+
 [tasks."examples:build"]
 description = "Clone an examples.jsonl entry and build it for every target the entry declares (usage: mise run examples:build <name>)"
 run = "nu scripts/examples/build.nu"

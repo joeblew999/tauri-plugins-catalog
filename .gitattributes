@@ -1,0 +1,18 @@
+# Force LF line endings everywhere so identical content produces identical
+# bytes across Mac / Linux / Windows checkouts. Critical for the CI
+# render-drift check (`git diff --exit-code` after `plugins:sort` /
+# `plugins:render`).
+
+* text=auto eol=lf
+
+# Be explicit about every text format we touch.
+*.nu        text eol=lf
+*.nuon      text eol=lf
+*.toml      text eol=lf
+*.md        text eol=lf
+*.jsonl     text eol=lf
+*.json      text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sh        text eol=lf
+*.gitignore text eol=lf
