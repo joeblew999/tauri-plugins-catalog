@@ -13,6 +13,7 @@ jobs:
       - run: mise run plugins:validate
       - run: mise run plugins:sort
       - run: mise run plugins:render
+      - run: mise run examples:validate
       - name: plugins.jsonl and README must be sorted and regenerated
         run: |
           if ! git diff --exit-code -- plugins.jsonl README.md; then

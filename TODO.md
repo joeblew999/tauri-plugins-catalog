@@ -308,6 +308,35 @@ should leave the system in a state where `doctor.nu` says green.
   not, add `mise use cargo:cargo-ndk` and a thin wrapper task. Defer
   until we have a working Tauri Android build to test against.
 
+### 2026-05-26 (continued — monorepo restructure + catalog-driven build)
+
+- **examples.jsonl is now an executable spec**, not just docs.
+  - New `examples:build <name>` task: reads entry, resolves source
+    (in-tree `local` or `git clone repo`), sets `NDK_HOME` from
+    `entry.android.ndk` if pinned, builds for every declared target the
+    host supports.
+  - Verified end-to-end: `mise run examples:build tauri-android-test`
+    produces desktop macOS .app + Android APK in one go.
+- **Schema updated:** `repo` and `local` are both nullable; at least
+  one must be set. `local` is a path relative to repo root for monorepo
+  examples; `repo` is a clone URL for external ones. Validator enforces
+  the constraint and verifies `local` path exists.
+- **Monorepo: `examples/tauri-android-test/` lives in-tree.** Was an
+  external repo briefly but per user's "we can do a sort of mono repo
+  thing for now" → moved inside. `.gitignore` excludes
+  `examples/*/{node_modules,src-tauri/target,src-tauri/gen,dist}/`
+  so source is committed, build artifacts are not.
+- **TODO (user action):** `github.com/joeblew999/tauri-android-test`
+  is now redundant — its content lives at `examples/tauri-android-test/`.
+  Delete via: `gh auth refresh -h github.com -s delete_repo && gh repo
+  delete joeblew999/tauri-android-test --yes`. My agent token lacks
+  the delete_repo scope.
+- **Future: tauri-tasks.toml extraction for git includes.** Other repos
+  could `includes = ["git::.../tauri-tasks.toml?ref=main"]` to adopt
+  our doctor/setup/build wrappers. Deferred until there's a concrete
+  consumer; current option is "copy mise.toml's tauri:* sections +
+  scripts/tauri/ wholesale."
+
 ### 2026-05-26 (continued — end-to-end APK build on macOS)
 
 - **Full Android toolchain proven end-to-end on this Mac.**
