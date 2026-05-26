@@ -108,3 +108,7 @@ run = "nu scripts/lint-os-paths.nu"
 [tasks."examples:build"]
 description = "Clone an examples.jsonl entry and build it for every target the entry declares (usage: mise run examples:build <name>)"
 run = "nu scripts/examples/build.nu"
+
+[tasks."examples:coverage"]
+description = "Show which plugins are demonstrated by which examples; highlight gaps"
+run = "nu scripts/examples/coverage.nu"

@@ -6,6 +6,12 @@ let required = ($schema | columns)
 let valid_targets = ["windows" "macos" "linux" "ios" "android"]
 let valid_tauri = ["1" "2"]
 
+# Build the set of known plugin names from plugins.jsonl so we can verify
+# each example's `plugins` list references real entries.
+let known_plugin_names = (
+    open plugins.jsonl --raw | lines | each { from json } | get name
+)
+
 let raw = (open examples.jsonl --raw)
 let total = ($raw | lines | length)
 
@@ -34,7 +40,13 @@ let errors = ($raw | lines | enumerate | each { |row|
             } else if ("ios" in $entry.targets) and ($entry.ios == null) {
                 $"line ($n): targets includes 'ios' but ios field is null. Populate with { deployment_target, xcode_min }"
             } else {
-                null
+                # Check plugins[] entries exist in plugins.jsonl
+                let unknown_plugins = ($entry.plugins | where { |p| not ($p in $known_plugin_names) })
+                if ($unknown_plugins | length) > 0 {
+                    $"line ($n): plugins[] references entries not in plugins.jsonl: ($unknown_plugins | str join ', ')"
+                } else {
+                    null
+                }
             }
         }
     }

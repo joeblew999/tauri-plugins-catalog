@@ -27,6 +27,7 @@
     targets: ["desktop"],                           # subset of: "windows" "macos" "linux" "ios" "android"
     android: null,                                  # null if not targeting android; else { min_api, target_api, ndk }
     ios: null,                                      # null if not targeting ios; else { deployment_target, xcode_min }
+    plugins: [],                                    # plugin slugs from plugins.jsonl this app demonstrates; [] = no specific claim
     tags: ["example", "demo"],                      # short lowercase kebab-case tags
     stars_at_verify: 0,                             # github stars at last_verified; for context
     last_verified: "2026-05-26",                    # YYYY-MM-DD; date last checked against upstream
