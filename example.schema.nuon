@@ -19,7 +19,8 @@
 
 {
     name: "example",                                # short unique slug, e.g. "spacedrive"
-    repo: "https://github.com/owner/example",       # canonical github repo
+    repo: "https://github.com/owner/example",       # canonical github repo, or null if local-only
+    local: null,                                    # null, or path relative to repo root for in-tree examples (monorepo style)
     description: "One-line description of the app.",
     tauri_version: "2",                             # "2" | "1" — must be "2" for new entries
     frontend: "react",                              # "vanilla" | "react" | "vue" | "svelte" | "solid" | "leptos" | "yew" | "dioxus" | "other"

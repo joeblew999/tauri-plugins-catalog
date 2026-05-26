@@ -19,6 +19,10 @@ let errors = ($raw | lines | enumerate | each { |row|
         let missing = ($required | where { |k| not ($k in $cols) })
         if ($missing | length) > 0 {
             $"line ($n): missing fields: ($missing | str join ', ')"
+        } else if $entry.repo == null and $entry.local == null {
+            $"line ($n): at least one of `repo` or `local` must be set"
+        } else if $entry.local != null and not ($entry.local | path exists) {
+            $"line ($n): local path does not exist: ($entry.local)"
         } else if not ($entry.tauri_version in $valid_tauri) {
             $"line ($n): tauri_version must be one of: ($valid_tauri | str join ', '); got ($entry.tauri_version)"
         } else {

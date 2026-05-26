@@ -2,3 +2,8 @@
 *.swp
 /tmp/
 /work/
+# in-tree examples: source code committed; build artifacts ignored
+examples/*/node_modules/
+examples/*/src-tauri/target/
+examples/*/src-tauri/gen/
+examples/*/dist/

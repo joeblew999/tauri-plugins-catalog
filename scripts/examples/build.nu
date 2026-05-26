@@ -1,12 +1,11 @@
 #!/usr/bin/env nu
-# examples:build <name> — clone the named entry from examples.jsonl and build
-# it for every platform the entry declares it targets (matching host capability).
+# examples:build <name> — read the entry from examples.jsonl, build it for
+# every declared target the host can handle, report artifacts.
 #
-# Reads examples.jsonl. Clones into ./work/<name>/ (gitignored). Sets NDK_HOME
-# from the entry's android.ndk if specified (else relies on doctor's reported
-# install path).
+# Source: `local` (in-tree) preferred when set; else clone `repo` into work/.
+# NDK_HOME: set from entry's android.ndk when specified, else default mise path.
 #
-# Usage: nu scripts/examples/build.nu <name>
+# Usage: mise run examples:build <name>
 
 const NDK_DEFAULT_PATH = "/Users/apple/.local/share/mise/installs/vfox-mise-plugins-vfox-android-sdk/20.0/ndk/27.0.12077973"
 
@@ -15,7 +14,6 @@ def main [name: string] {
     let matches = ($entries | where name == $name)
     if ($matches | length) == 0 {
         print --stderr $"no examples.jsonl entry named: ($name)"
-        print --stderr "try: mise run examples:validate (then check examples.jsonl)"
         exit 1
     }
     let entry = ($matches | first)
@@ -25,16 +23,21 @@ def main [name: string] {
     print $"   targets: ($entry.targets | str join ', ')"
     print ""
 
-    let work_dir = $"work/($name)"
-    if not ($work_dir | path exists) {
-        mkdir work
-        print $"→ cloning ($entry.repo) -> ($work_dir)"
-        ^git clone $entry.repo $work_dir
+    # Resolve build dir
+    let work_dir = if $entry.local != null {
+        print $"→ using in-tree path: ($entry.local)"
+        $entry.local
     } else {
-        print $"→ using existing checkout at ($work_dir)"
-        let root = (pwd)
-    cd $work_dir
-        let r = (^git -C $work_dir pull --ff-only | complete)
+        let wd = $"work/($name)"
+        if not ($wd | path exists) {
+            mkdir work
+            print $"→ cloning ($entry.repo) -> ($wd)"
+            ^git clone $entry.repo $wd
+        } else {
+            print $"→ using existing clone at ($wd)"
+            let r = (^git -C $wd pull --ff-only | complete)
+        }
+        $wd
     }
 
     let root = (pwd)
@@ -47,17 +50,17 @@ def main [name: string] {
     }
 
     let host = $nu.os-info.name
-    mut built_artifacts = []
+    mut built = []
 
-    # Desktop build — only attempt if host can build for it natively
+    # Desktop build — only attempt if host can build it natively
     let desktop_target_for_host = if $host == "macos" { "macos" } else if $host == "linux" { "linux" } else { "windows" }
     if ($desktop_target_for_host in $entry.targets) {
         print ""
         print $"→ desktop build for host: ($host)..."
         let r = (^cargo tauri build | complete)
         if $r.exit_code == 0 {
-            print $"  ✓ desktop build succeeded"
-            $built_artifacts = ($built_artifacts | append $"desktop ($host)")
+            print "  ✓ desktop build succeeded"
+            $built = ($built | append $"desktop ($host)")
         } else {
             print --stderr $"  ✗ desktop build failed (exit ($r.exit_code))"
         }
@@ -65,11 +68,8 @@ def main [name: string] {
 
     # Android build
     if ("android" in $entry.targets) {
-        # NDK_HOME: prefer entry's pinned ndk if specified, else default mise install path
-        let ndk = if $entry.android.ndk != null { $entry.android.ndk } else { null }
-        let ndk_home = if $ndk != null {
-            # try common locations matching the ndk version
-            let candidate = $"($NDK_DEFAULT_PATH | path dirname)/($ndk)"
+        let ndk_home = if $entry.android.ndk != null {
+            let candidate = $"($NDK_DEFAULT_PATH | path dirname)/($entry.android.ndk)"
             if ($candidate | path exists) { $candidate } else { $NDK_DEFAULT_PATH }
         } else {
             $NDK_DEFAULT_PATH
@@ -80,30 +80,23 @@ def main [name: string] {
             $env.NDK_HOME = $ndk_home
             print ""
             print $"→ android build with NDK_HOME=($ndk_home)..."
-
-            # init if not already done
             if not ("src-tauri/gen/android" | path exists) {
                 let init_r = (^npm run tauri android init | complete)
                 if $init_r.exit_code != 0 {
                     print --stderr "  ✗ android init failed"
-                    print --stderr $init_r.stderr
                 }
             }
-
             let r = (^npm run tauri android build -- --apk --debug | complete)
             if $r.exit_code == 0 {
-                let apk_glob = "src-tauri/gen/android/app/build/outputs/apk/**/*.apk"
-                let apks = (glob $apk_glob)
+                let apks = (glob "src-tauri/gen/android/app/build/outputs/apk/**/*.apk")
                 if ($apks | length) > 0 {
                     print $"  ✓ android APK built: ($apks | first)"
-                    $built_artifacts = ($built_artifacts | append "android APK")
+                    $built = ($built | append "android APK")
                 } else {
                     print "  ✓ android build returned 0 but no APK found"
                 }
             } else {
                 print --stderr $"  ✗ android build failed (exit ($r.exit_code))"
-                let tail_lines = ($r.stderr | lines | reverse | first 5 | reverse | str join "\n")
-                print --stderr $tail_lines
             }
         }
     }
@@ -121,7 +114,7 @@ def main [name: string] {
         let r = (^npm run tauri ios build -- --target aarch64-sim --debug | complete)
         if $r.exit_code == 0 {
             print "  ✓ ios sim build succeeded"
-            $built_artifacts = ($built_artifacts | append "ios simulator")
+            $built = ($built | append "ios simulator")
         } else {
             print --stderr "  ✗ ios build failed (likely missing simulator runtime — see tauri:doctor:ios)"
         }
@@ -129,9 +122,9 @@ def main [name: string] {
 
     cd $root
     print ""
-    if ($built_artifacts | length) == 0 {
+    if ($built | length) == 0 {
         print --stderr "no artifacts built."
         exit 1
     }
-    print $"✓ built: ($built_artifacts | str join ', ')"
+    print $"✓ built: ($built | str join ', ')"
 }
