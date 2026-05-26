@@ -67,7 +67,7 @@ def main [] {
         let ndk_dir = $"($ah)/ndk"
         if ($ah != "") and ($ndk_dir | path exists) and ((ls $ndk_dir | length) > 0) {
             let latest = (ls $ndk_dir | get name | each { |p| $p | path basename } | sort | last)
-            fail "NDK_HOME" $"NDK installed at ($ndk_dir)/($latest); export NDK_HOME=($ndk_dir)/($latest) (or add to mise.toml [env])"
+            fail "NDK_HOME" $"NDK installed at ($ndk_dir)/($latest); export NDK_HOME=($ndk_dir)/($latest)  -- or add to mise.toml [env]"
         } else {
             fail "NDK_HOME" "run `mise run tauri:android:setup` to install NDK + Rust targets"
         }
