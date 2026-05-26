@@ -5,9 +5,9 @@
 
 Structured catalog of Tauri v2 plugins as JSONL.
 
-- [plugins.jsonl](plugins.jsonl) — one plugin per line
-- [schema.nuon](schema.nuon) — schema as a fully-populated example record (the source of truth — open with nushell)
-- [TODO.md](TODO.md) — follow-up work in scoping (nushell scripts for Tauri Android toolchain setup)
+- [plugins.jsonl](plugins.jsonl) — one plugin per line, schema in [schema.nuon](schema.nuon)
+- [examples.jsonl](examples.jsonl) — real Tauri apps for toolchain testing, schema in [example.schema.nuon](example.schema.nuon)
+- [TODO.md](TODO.md) — Tauri toolchain script roadmap + research log
 
 ## Quick use
 
@@ -30,19 +30,42 @@ $plugins | where active_fork != null | select name repo active_fork
 
 ## Tasks
 
-Catalog management (`scripts/catalog/`):
+Catalog management (`scripts/plugins/`):
 
 ```sh
-mise run catalog:validate          # plugins.jsonl matches schema.nuon
-mise run catalog:count             # entry count + official/third-party split
-mise run catalog:sort              # sort plugins.jsonl by name (in place)
-mise run catalog:render            # regenerate the plugin table below
-mise run catalog:search <term>     # substring match on name/description/tags
-mise run catalog:install <name>    # print Cargo.toml + package.json snippets (respects active_fork)
-mise run catalog:freshness         # check upstream pushed_at, detect drift (needs gh CLI)
+mise run plugins:validate          # plugins.jsonl matches schema.nuon
+mise run plugins:count             # entry count + official/third-party split
+mise run plugins:sort              # sort plugins.jsonl by name (in place)
+mise run plugins:render            # regenerate the plugin table below
+mise run plugins:search <term>     # substring match on name/description/tags
+mise run plugins:install <name>    # print Cargo.toml + package.json snippets (respects active_fork)
+mise run plugins:freshness         # check upstream pushed_at, detect drift (needs gh CLI)
+mise run examples:validate         # verify examples.jsonl against example.schema.nuon
 ```
 
-Tauri toolchain scripts (`scripts/tauri/`) — in scoping, see [TODO.md](TODO.md).
+Tauri toolchain scripts (`scripts/tauri/`):
+
+```sh
+# Base layer
+mise run tauri:doctor              # verify Tauri prerequisites (read-only)
+mise run tauri:doctor -- --android # also check Android layer
+
+# Android — install + verify, then per-project lifecycle
+mise run tauri:android:setup       # install NDK 27, add Rust Android targets
+mise run tauri:android:init        # one-time per project: generate gen/android
+mise run tauri:android:dev         # hot-reload on connected device or emulator
+mise run tauri:android:build       # release APK/AAB
+mise run tauri:android:uninstall   # reverse setup: remove NDK + Rust targets ([--dry-run] [--yes])
+
+# iOS — macOS host only
+mise run tauri:ios:setup           # install Xcode CLT + CocoaPods + Rust iOS targets
+mise run tauri:ios:init            # one-time per project: generate gen/apple
+mise run tauri:ios:dev             # hot-reload on connected device or simulator
+mise run tauri:ios:build           # release IPA
+mise run tauri:ios:uninstall       # reverse setup: remove CocoaPods + Rust targets ([--dry-run] [--yes])
+```
+
+See [TODO.md](TODO.md) for the broader plan and research log.
 
 ## Plugins
 

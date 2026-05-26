@@ -14,9 +14,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          OUTPUT=$(mise run catalog:freshness 2>&1)
+          OUTPUT=$(mise run plugins:freshness 2>&1)
           {
-            echo '# Catalog freshness'
+            echo '# Plugins freshness'
             echo ''
             echo '```'
             echo "$OUTPUT"

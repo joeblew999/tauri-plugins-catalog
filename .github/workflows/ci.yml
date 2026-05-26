@@ -10,12 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
-      - run: mise run catalog:validate
-      - run: mise run catalog:sort
-      - run: mise run catalog:render
-      - name: catalog and README must be sorted and regenerated
+      - run: mise run plugins:validate
+      - run: mise run plugins:sort
+      - run: mise run plugins:render
+      - name: plugins.jsonl and README must be sorted and regenerated
         run: |
           if ! git diff --exit-code -- plugins.jsonl README.md; then
-            echo "::error::JSONL or README is out of sync. Run 'mise run catalog:sort && mise run catalog:render' locally and commit."
+            echo "::error::JSONL or README is out of sync. Run 'mise run plugins:sort && mise run plugins:render' locally and commit."
             exit 1
           fi

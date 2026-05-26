@@ -1,0 +1,25 @@
+# tauri-plugins-catalog — schema for examples.jsonl as a fully-populated example record.
+#
+# Examples are full Tauri applications used to (a) showcase well-built Tauri
+# projects and (b) test our toolchain end-to-end against real apps.
+#
+# Nushell `open example.schema.nuon` returns this record; validate.nu derives
+# the required field set from it.
+#
+# Conventions:
+#   - Tauri-only. Entries must depend on tauri 2.x.
+#   - `targets` lists what the app actually builds for (desktop, mobile, both).
+#     If mobile, our tauri:android:setup / tauri:ios:setup scripts must apply.
+#   - `description` is the project's own one-line tagline, normalised.
+
+{
+    name: "example",                                # short unique slug, e.g. "spacedrive"
+    repo: "https://github.com/owner/example",       # canonical github repo
+    description: "One-line description of the app.",
+    tauri_version: "2",                             # "2" | "1" — must be "2" for new entries
+    frontend: "react",                              # "vanilla" | "react" | "vue" | "svelte" | "solid" | "leptos" | "yew" | "dioxus" | "other"
+    targets: ["desktop"],                           # subset of: "windows" "macos" "linux" "ios" "android"
+    tags: ["example", "demo"],                      # short lowercase kebab-case tags
+    stars_at_verify: 0,                             # github stars at last_verified; for context
+    last_verified: "2026-05-26",                    # YYYY-MM-DD; date last checked against upstream
+}

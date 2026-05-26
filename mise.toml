@@ -1,30 +1,86 @@
 [tools]
 "aqua:nushell/nushell" = "latest"
 
-[tasks."catalog:validate"]
+[tasks."plugins:validate"]
 description = "Verify plugins.jsonl matches schema.nuon"
-run = "nu scripts/catalog/validate.nu"
+run = "nu scripts/plugins/validate.nu"
 
-[tasks."catalog:count"]
+[tasks."plugins:count"]
 description = "Entry count + official/third-party split"
-run = "nu scripts/catalog/count.nu"
+run = "nu scripts/plugins/count.nu"
 
-[tasks."catalog:sort"]
+[tasks."plugins:sort"]
 description = "Sort plugins.jsonl by name, in place"
-run = "nu scripts/catalog/sort.nu"
+run = "nu scripts/plugins/sort.nu"
 
-[tasks."catalog:render"]
+[tasks."plugins:render"]
 description = "Regenerate plugin table in README.md from plugins.jsonl"
-run = "nu scripts/catalog/render.nu"
+run = "nu scripts/plugins/render.nu"
 
-[tasks."catalog:search"]
-description = "Search plugins by name/description/tag (usage: mise run catalog:search <term>)"
-run = "nu scripts/catalog/search.nu"
+[tasks."plugins:search"]
+description = "Search plugins by name/description/tag (usage: mise run plugins:search <term>)"
+run = "nu scripts/plugins/search.nu"
 
-[tasks."catalog:install"]
-description = "Print install snippets for a plugin (usage: mise run catalog:install <name>)"
-run = "nu scripts/catalog/install.nu"
+[tasks."plugins:install"]
+description = "Print install snippets for a plugin (usage: mise run plugins:install <name>)"
+run = "nu scripts/plugins/install.nu"
 
-[tasks."catalog:freshness"]
+[tasks."plugins:freshness"]
 description = "Check upstream pushed_at and detect catalog drift (requires gh)"
-run = "nu scripts/catalog/freshness.nu"
+run = "nu scripts/plugins/freshness.nu"
+
+[tasks."tauri:doctor"]
+description = "Verify Tauri toolchain prerequisites (--android to force Android checks)"
+run = "nu scripts/tauri/doctor.nu"
+
+# ── Android — install + verify, then per-project lifecycle ───────────────
+# Copied from joeblew999/.github mise-tasks/mobile/ (CC0 self-fork).
+
+[tasks."tauri:android:setup"]
+description = "Install + verify Android toolchain: Java 17, ANDROID_HOME, NDK 27, Rust targets"
+tools = { java = "temurin-17.0.18+8" }
+run = "nu scripts/tauri/android-setup.nu"
+
+[tasks."tauri:android:init"]
+description = "tauri android init — generate the Android project (run once per clone)"
+run = "nu scripts/tauri/android-init.nu"
+
+[tasks."tauri:android:dev"]
+description = "tauri android dev — hot-reload on connected device or emulator"
+run = "nu scripts/tauri/android-dev.nu"
+
+[tasks."tauri:android:build"]
+description = "tauri android build — release APK/AAB"
+run = "nu scripts/tauri/android-build.nu"
+
+[tasks."tauri:android:uninstall"]
+description = "Remove SDK components + Rust targets installed by tauri:android:setup ([--dry-run] [--yes])"
+run = "nu scripts/tauri/android-uninstall.nu"
+
+# ── iOS — macOS host only ───────────────────────────────────────────────
+[tasks."tauri:ios:setup"]
+description = "Install + verify iOS toolchain: Xcode CLI + CocoaPods + Rust targets (macOS only)"
+tools = { ruby = "latest" }
+run = "nu scripts/tauri/ios-setup.nu"
+
+[tasks."tauri:ios:init"]
+description = "tauri ios init — generate the Xcode project (macOS only, run once per clone)"
+run = "nu scripts/tauri/ios-init.nu"
+
+[tasks."tauri:ios:dev"]
+description = "tauri ios dev — hot-reload on connected device or simulator (macOS only)"
+run = "nu scripts/tauri/ios-dev.nu"
+
+[tasks."tauri:ios:build"]
+description = "tauri ios build — release IPA (macOS only)"
+run = "nu scripts/tauri/ios-build.nu"
+
+[tasks."tauri:ios:uninstall"]
+description = "Remove CocoaPods + Rust iOS targets installed by tauri:ios:setup ([--dry-run] [--yes])"
+run = "nu scripts/tauri/ios-uninstall.nu"
+
+# ── Examples catalog (real Tauri apps for toolchain testing) ───────────────
+
+[tasks."examples:validate"]
+description = "Verify examples.jsonl matches example.schema.nuon"
+run = "nu scripts/examples/validate.nu"
