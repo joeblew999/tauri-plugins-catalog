@@ -5,8 +5,33 @@ on:
   pull_request:
 
 jobs:
-  check:
+  # OS-neutrality lint: no hardcoded /Users/, /home/joeblew999/, /opt/homebrew, etc.
+  # in our scripts. The grep allow-lists /Library/Developer/CommandLineTools
+  # because that's Apple's fixed path inside macOS-gated ios scripts.
+  lint:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: no hardcoded OS-specific paths
+        run: |
+          BAD=$(grep -rnE '/Users/|/opt/homebrew|darwin-x86_64|darwin-aarch64' \
+                  scripts/ examples.jsonl plugins.jsonl schema.nuon example.schema.nuon \
+                  2>/dev/null \
+                | grep -v 'CommandLineTools' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::Hardcoded OS-specific paths detected:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "ok: no hardcoded host paths"
+
+  # Verify the catalog tasks work identically on both Linux and macOS.
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: jdx/mise-action@v2
