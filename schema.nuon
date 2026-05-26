@@ -1,0 +1,31 @@
+# tauri-plugins-catalog — schema as a fully-populated example record.
+#
+# This file IS the schema. Nushell `open schema.nuon` returns the record below;
+# validate.nu derives the required field set and platforms key set from it.
+# Update this file when fields change; the validator and other scripts adapt.
+#
+# Conventions:
+#   - Tauri v1-only plugins are not listed — this catalog tracks v2.
+#   - A plugin is considered "official" iff it lives under github.com/tauri-apps/.
+#   - `description` is copied from upstream when one exists; otherwise written here.
+#   - Append-only by default; run `mise run sort` before committing bulk edits.
+
+{
+    name: "example",                          # short unique slug, e.g. "fs"
+    crate: "tauri-plugin-example",            # crates.io name, or null
+    npm: "@tauri-apps/plugin-example",        # npm package name, or null
+    official: true,                           # true iff under github.com/tauri-apps/
+    description: "One-line description ending in a period.",
+    repo: "https://github.com/tauri-apps/plugins-workspace",
+    path: "plugins/example",                  # subpath in monorepo, or null
+    platforms: {
+        windows: "yes",                       # one of: "yes" | "no" | "unknown"
+        macos: "yes",
+        linux: "yes",
+        ios: "no",
+        android: "no",
+    },
+    tags: ["example"],                        # short lowercase kebab-case tags
+    active_fork: null,                        # url when a fork carries patches; otherwise null
+    last_verified: "2026-05-26",              # YYYY-MM-DD; date last verified against upstream
+}

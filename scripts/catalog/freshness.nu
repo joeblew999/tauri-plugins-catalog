@@ -15,7 +15,7 @@ let plugins = (open plugins.jsonl --raw | lines | each { from json })
 
 # Gather unique repo URLs across .repo and .active_fork.
 let repos = ($plugins | each { |p|
-    [$p.repo (($p.active_fork? | default null))]
+    [$p.repo $p.active_fork]
 } | flatten | where { |x| $x != null } | uniq)
 
 print $"fetching pushed_at for ($repos | length) unique repos..."
@@ -33,8 +33,7 @@ let pushed_by_url = ($pushed | reduce --fold {} { |row, acc|
 # Per-entry freshness check.
 let report = ($plugins | each { |p|
     let repo_pushed = ($pushed_by_url | get $p.repo)
-    let fork = ($p.active_fork? | default null)
-    let fork_pushed = (if $fork != null { $pushed_by_url | get $fork } else { null })
+    let fork_pushed = (if $p.active_fork != null { $pushed_by_url | get $p.active_fork } else { null })
     let lv = ($p.last_verified | into datetime)
     let rp = ($repo_pushed | into datetime)
     let stale = ($lv < $rp)

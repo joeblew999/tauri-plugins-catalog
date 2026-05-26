@@ -6,7 +6,8 @@
 Structured catalog of Tauri v2 plugins as JSONL.
 
 - [plugins.jsonl](plugins.jsonl) — one plugin per line
-- [SCHEMA.md](SCHEMA.md) — field definitions
+- [schema.nuon](schema.nuon) — schema as a fully-populated example record (the source of truth — open with nushell)
+- [TODO.md](TODO.md) — follow-up work in scoping (nushell scripts for Tauri Android toolchain setup)
 
 ## Quick use
 
@@ -24,20 +25,24 @@ $plugins | where { |p| $p.platforms.ios == "yes" or $p.platforms.android == "yes
 $plugins | where official | get crate
 
 # plugins that have an active fork to prefer for installs
-$plugins | where { |p| ($p.active_fork? | default null) != null } | select name repo active_fork
+$plugins | where active_fork != null | select name repo active_fork
 ```
 
 ## Tasks
 
+Catalog management (`scripts/catalog/`):
+
 ```sh
-mise run validate          # every line parses as JSON, required fields present
-mise run count             # entry count + official/third-party split
-mise run sort              # sort plugins.jsonl by name (in place)
-mise run render            # regenerate the plugin table below
-mise run search <term>     # substring match on name/description/tags
-mise run install <name>    # print Cargo.toml + package.json snippets (respects active_fork)
-mise run freshness         # check upstream pushed_at, detect drift (needs gh CLI)
+mise run catalog:validate          # plugins.jsonl matches schema.nuon
+mise run catalog:count             # entry count + official/third-party split
+mise run catalog:sort              # sort plugins.jsonl by name (in place)
+mise run catalog:render            # regenerate the plugin table below
+mise run catalog:search <term>     # substring match on name/description/tags
+mise run catalog:install <name>    # print Cargo.toml + package.json snippets (respects active_fork)
+mise run catalog:freshness         # check upstream pushed_at, detect drift (needs gh CLI)
 ```
+
+Tauri toolchain scripts (`scripts/tauri/`) — in scoping, see [TODO.md](TODO.md).
 
 ## Plugins
 

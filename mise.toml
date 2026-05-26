@@ -1,30 +1,30 @@
 [tools]
 "aqua:nushell/nushell" = "latest"
 
-[tasks.validate]
-description = "Verify plugins.jsonl: every line parses, required fields present"
-run = "nu scripts/validate.nu"
+[tasks."catalog:validate"]
+description = "Verify plugins.jsonl matches schema.nuon"
+run = "nu scripts/catalog/validate.nu"
 
-[tasks.count]
+[tasks."catalog:count"]
 description = "Entry count + official/third-party split"
-run = "nu scripts/count.nu"
+run = "nu scripts/catalog/count.nu"
 
-[tasks.sort]
+[tasks."catalog:sort"]
 description = "Sort plugins.jsonl by name, in place"
-run = "nu scripts/sort.nu"
+run = "nu scripts/catalog/sort.nu"
 
-[tasks.render]
+[tasks."catalog:render"]
 description = "Regenerate plugin table in README.md from plugins.jsonl"
-run = "nu scripts/render.nu"
+run = "nu scripts/catalog/render.nu"
 
-[tasks.search]
-description = "Search plugins by name/description/tag (usage: mise run search <term>)"
-run = "nu scripts/search.nu"
+[tasks."catalog:search"]
+description = "Search plugins by name/description/tag (usage: mise run catalog:search <term>)"
+run = "nu scripts/catalog/search.nu"
 
-[tasks.install]
-description = "Print install snippets for a plugin (usage: mise run install <name>)"
-run = "nu scripts/install.nu"
+[tasks."catalog:install"]
+description = "Print install snippets for a plugin (usage: mise run catalog:install <name>)"
+run = "nu scripts/catalog/install.nu"
 
-[tasks.freshness]
+[tasks."catalog:freshness"]
 description = "Check upstream pushed_at and detect catalog drift (requires gh)"
-run = "nu scripts/freshness.nu"
+run = "nu scripts/catalog/freshness.nu"

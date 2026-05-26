@@ -13,11 +13,10 @@ def org_from_url [url: string] {
 # "[org](repo-url)", or "[origin](url) → [fork](url)" when active_fork is set.
 def source_cell [entry: record] {
     let origin = $"[(org_from_url $entry.repo)]\(($entry.repo)\)"
-    let fork = (if "active_fork" in ($entry | columns) { $entry.active_fork } else { null })
-    if $fork == null {
+    if $entry.active_fork == null {
         $origin
     } else {
-        $"($origin) → [(org_from_url $fork)]\(($fork)\)"
+        $"($origin) → [(org_from_url $entry.active_fork)]\(($entry.active_fork)\)"
     }
 }
 

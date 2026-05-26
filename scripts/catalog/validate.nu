@@ -1,8 +1,9 @@
 #!/usr/bin/env nu
-# Verify plugins.jsonl: every line parses and required fields are present.
+# Verify plugins.jsonl: every line parses and matches the shape of schema.nuon.
 
-let required = ["name" "official" "description" "repo" "platforms" "tags" "last_verified"]
-let platform_keys = ["windows" "macos" "linux" "ios" "android"]
+let schema = (open schema.nuon)
+let required = ($schema | columns)
+let platform_keys = ($schema.platforms | columns)
 let valid_platform_values = ["yes" "no" "unknown"]
 
 let raw = (open plugins.jsonl --raw)
@@ -42,4 +43,4 @@ if ($errors | length) > 0 {
     print $"($errors | length) invalid line\(s\)"
     exit 1
 }
-print $"ok: ($total) entries"
+print $"ok: ($total) entries match schema.nuon"

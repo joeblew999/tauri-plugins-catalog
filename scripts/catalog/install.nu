@@ -11,7 +11,7 @@ def main [name: string] {
         exit 1
     }
     let p = ($matches | first)
-    let fork = ($p.active_fork? | default null)
+    let fork = $p.active_fork
 
     print $"# ($p.name) — ($p.description)"
     print $"# source: ($p.repo)"
@@ -37,7 +37,7 @@ def main [name: string] {
         }
         print $"($p.crate) = { git = \"($url)\", package = \"($p.crate)\" }"
         print ""
-        if ($p.npm? | default null) != null {
+        if $p.npm != null {
             print "# package.json — requires .npmrc configured for GitHub Packages"
             print $"\"($p.npm)\": \"*\""
         }

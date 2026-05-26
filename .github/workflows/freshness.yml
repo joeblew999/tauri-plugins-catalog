@@ -14,7 +14,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          OUTPUT=$(mise run freshness 2>&1)
+          OUTPUT=$(mise run catalog:freshness 2>&1)
           {
             echo '# Catalog freshness'
             echo ''
