@@ -1,7 +1,61 @@
 # tauri-plugins-catalog
 
 [![ci](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/ci.yml/badge.svg)](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/ci.yml)
+[![ci-full](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/ci-full.yml/badge.svg)](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/ci-full.yml)
 [![freshness](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/freshness.yml/badge.svg)](https://github.com/joeblew999/tauri-plugins-catalog/actions/workflows/freshness.yml)
+
+## Git clone & go
+
+Works on **Mac, Linux, Windows** — CI proves all three on every push to main
+([ci-full workflow](.github/workflows/ci-full.yml) installs the full Android
+toolchain on each OS and builds a real APK).
+
+```sh
+# 1. Clone
+git clone https://github.com/joeblew999/tauri-plugins-catalog.git
+cd tauri-plugins-catalog
+
+# 2. Install base toolchain (mise reads mise.toml)
+mise install
+
+# 3. Tauri CLI (prebuilt binary, fast)
+cargo binstall --no-confirm tauri-cli
+
+# 4. Verify base layer (should be all green)
+mise run tauri:doctor:base
+```
+
+For **Android** development (any OS):
+
+```sh
+# Linux only: webview deps
+sudo apt-get install libwebkit2gtk-4.1-dev libsoup-3.0-dev librsvg2-dev pkg-config
+
+# Install cmdline-tools + NDK + platforms + build-tools + Rust Android targets
+mise use -g vfox:mise-plugins/vfox-android-sdk@20.0
+mise run tauri:android:setup
+
+# Persist NDK_HOME (one-time)
+mise set --global NDK_HOME="$(mise where vfox:mise-plugins/vfox-android-sdk)/ndk/27.0.12077973"
+
+# Build the reference example end-to-end
+mise run examples:build tauri-android-test
+```
+
+For **iOS** (macOS host only):
+
+```sh
+mise run tauri:ios:setup
+xcodebuild -downloadPlatform iOS   # one-time ~10 GB Apple download
+mise run tauri:doctor:ios          # should be fully green
+```
+
+To uninstall the Android/iOS toolchain cleanly:
+
+```sh
+mise run tauri:android:uninstall   # [--dry-run] [--yes] [--purge]
+mise run tauri:ios:uninstall       # [--dry-run] [--yes]
+```
 
 Structured catalog of Tauri v2 plugins as JSONL.
 
