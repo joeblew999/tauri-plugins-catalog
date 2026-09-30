@@ -4,10 +4,10 @@ idiomatic_version_file_enable_tools = ["rust"]
 
 [tools]
 # Base layer: runs everywhere, OS-neutral via aqua/mise registry.
-"aqua:nushell/nushell" = "latest"   # the language we author scripts in
+"aqua:nushell/nushell" = "0.115.0"   # the language we author scripts in
 node              = "24.19.0"           # JS frontends
-java              = "17"            # Android (gradle), inert elsewhere
-"cargo-binstall"  = "latest"        # prebuilt-binary accelerator for cargo
+java              = "17.0.2"            # Android (gradle), inert elsewhere
+"cargo-binstall"  = "1.19.1"        # prebuilt-binary accelerator for cargo
 
 [tasks."plugins:validate"]
 description = "Verify plugins.jsonl matches schema.nuon"
